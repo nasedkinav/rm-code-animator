@@ -20,14 +20,8 @@ public class SparseMatrix {
     public List<Integer> getCol(int index) {
         List<Integer> column = new ArrayList<Integer>();
 
-        for (int i = 0; i < collection.size(); i ++) {
-            try {
-                column.add(collection.get(i).get(index));
-            } catch (IndexOutOfBoundsException iobe) {
-                column.add(null);
-            } catch (Exception e) {
-                // stub
-            }
+        for (List<Integer> row : collection) {
+            column.add(row.get(index));
         }
 
         return column;
@@ -38,25 +32,33 @@ public class SparseMatrix {
     }
 
     public void addCol(List<Integer> col) {
-        if (col.size() != collection.size()) {
+        List<Integer> column = new ArrayList<Integer>(col);
+
+        if (column.size() != collection.size()) {
             throw new IllegalArgumentException("Column height does not match matrix height");
         }
 
         for (int i = 0; i < collection.size(); i ++) {
-            collection.get(i).add((col.get(i)));
+            collection.get(i).add((column.get(i)));
         }
     }
 
     public void append(List<List<Integer>> matrix) {
-        for (int i = 0; i < matrix.size(); i ++) {
-            addRow(matrix.get(i));
+        for (List<Integer> row : matrix) {
+            addRow(row);
+        }
+    }
+
+    public void append(SparseMatrix matrix) {
+        for (int i = 0; i < matrix.getHeight(); i ++) {
+            addRow(matrix.getRow(i));
         }
     }
 
     public void print() {
-        for (int i = 0; i < collection.size(); i ++) {
-            for (int j = 0; j < collection.get(i).size(); j ++) {
-                System.out.print(collection.get(i).get(j) + " ");
+        for (List<Integer> row : collection) {
+            for (Integer bit : row) {
+                System.out.print(bit + " ");
             }
             System.out.println();
         }

@@ -4,7 +4,7 @@ public class LinearSpace {
 
     private static final int q = 2;
 
-    public static Integer add(Integer a, Integer b) {
+    public static int add(Integer a, Integer b) {
         return (a + b) % q;
     }
 
@@ -20,7 +20,7 @@ public class LinearSpace {
         return result;
     }
 
-    public static Integer multiply(Integer a, Integer b) {
+    public static int multiply(Integer a, Integer b) {
         return (a * b) % q;
     }
 
@@ -38,19 +38,19 @@ public class LinearSpace {
 
     public static List<Integer> multiply(List<Integer> a, Integer b) {
         List<Integer> result = new ArrayList<Integer>(a.size());
-        for (int i = 0; i < a.size(); i ++) {
-            result.add(multiply(a.get(i), b));
+        for (Integer bit : a) {
+            result.add(multiply(bit, b));
         }
 
         return result;
     }
 
-    public static Integer dotProduct(List<Integer> a, List<Integer> b) {
+    public static int dotProduct(List<Integer> a, List<Integer> b) {
         if (a.size() != b.size()) {
             throw new IllegalArgumentException();
         }
 
-        Integer result = 0;
+        int result = 0;
         for (int i = 0; i < a.size(); i ++) {
             result = add(result, multiply(a.get(i), b.get(i)));
         }
@@ -59,9 +59,9 @@ public class LinearSpace {
     }
 
     public static List<Integer> invert(List<Integer> a) {
-        List<Integer> result = new ArrayList<Integer>(a);
-        for (int i = 0; i < result.size(); i ++) {
-            result.set(i, (result.get(i) + 1) % q);
+        List<Integer> result = new ArrayList<Integer>();
+        for (Integer bit : a) {
+            result.add((bit + 1) % q);
         }
 
         return result;

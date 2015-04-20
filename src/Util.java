@@ -3,7 +3,7 @@ import java.util.List;
 
 public class Util {
 
-    public static List<List<Integer>> combination(int n, int k) {
+    public static SparseMatrix combination(int n, int k) {
         if (k > n) {
             throw new IllegalArgumentException();
         }
@@ -11,19 +11,19 @@ public class Util {
             throw new IllegalArgumentException();
         }
 
-        List<List<Integer>> result = new ArrayList<List<Integer>>();
+        SparseMatrix result = new SparseMatrix();
         List<Integer> combination = new ArrayList<Integer>(k);
         for (int i = 1; i <= k; i ++) {
             combination.add(i);
         }
         if (k == n) {
-            result.add(new ArrayList<Integer>(combination));
+            result.addRow(new ArrayList<Integer>(combination));
             return result;
         }
 
         int p = k;
         while (p >= 1) {
-            result.add(new ArrayList<Integer>(combination));
+            result.addRow(new ArrayList<Integer>(combination));
             if (combination.get(k - 1) == n) {
                 p --;
             } else {
@@ -39,18 +39,20 @@ public class Util {
         return result;
     }
 
-    public static Integer getMajorBit(List<Integer> a) {
-        int zero = 0;
-        int ones = 0;
+    public static int getMajorBit(List<Integer> a) {
+        int zeroGreater = 0;
 
-        for (int i = 0; i < a.size(); i ++) {
-            if (a.get(i) == 0) {
-                zero ++;
-            } else {
-                ones ++;
+        for (Integer bit : a) {
+            if (bit == 0) {
+                zeroGreater++;
+                continue;
             }
+            zeroGreater--;
         }
 
-        return zero > ones ? 0 : 1;
+        if (zeroGreater == 0) {
+            throw new RuntimeException("Number of ones equals to number of zeros in dot product values");
+        }
+        return zeroGreater > 0 ? 0 : 1;
     }
 }
