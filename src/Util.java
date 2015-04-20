@@ -38,4 +38,19 @@ public class Util {
 
         return result;
     }
+
+    public static Integer getMajorBit(List<Integer> a) {
+        int zero = 0;
+        int ones = 0;
+
+        for (int i = 0; i < a.size(); i ++) {
+            if (a.get(i) == 0) {
+                zero ++;
+            } else {
+                ones ++;
+            }
+        }
+
+        return zero > ones ? 0 : 1;
+    }
 }

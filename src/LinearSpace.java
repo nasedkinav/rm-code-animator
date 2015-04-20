@@ -36,7 +36,7 @@ public class LinearSpace {
         return result;
     }
 
-    public static List<Integer> multiply(List<Integer> a, int b) {
+    public static List<Integer> multiply(List<Integer> a, Integer b) {
         List<Integer> result = new ArrayList<Integer>(a.size());
         for (int i = 0; i < a.size(); i ++) {
             result.add(multiply(a.get(i), b));
@@ -58,4 +58,12 @@ public class LinearSpace {
         return result;
     }
 
+    public static List<Integer> invert(List<Integer> a) {
+        List<Integer> result = new ArrayList<Integer>(a);
+        for (int i = 0; i < result.size(); i ++) {
+            result.set(i, (result.get(i) + 1) % q);
+        }
+
+        return result;
+    }
 }
