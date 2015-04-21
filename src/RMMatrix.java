@@ -9,7 +9,7 @@ public class RMMatrix extends SparseMatrix {
     private int r;
 
     public RMMatrix(int r, int m) {
-        if (m < 2 || r > m || r < 0) {
+        if (m < 2 || r >= m || r < 0) {
             throw new IllegalArgumentException();
         }
         this.m = m;
@@ -28,7 +28,7 @@ public class RMMatrix extends SparseMatrix {
         for (int i = width / RMCoder.q; i >= 1; i /= RMCoder.q) {
             // (i = n / q; i >= 1; i /= q) or (i = 1; i < n; i *= q)
             for (int j = 0; j < width; j ++) {
-                row.add((j / i + 1) % RMCoder.q);
+                row.add((j / i) % RMCoder.q);
                 // (j / i + 1) % q or (j / i) % q
             }
             addRow(row);

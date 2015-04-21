@@ -1,3 +1,7 @@
+import com.sun.org.apache.xpath.internal.SourceTree;
+
+import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,22 +21,22 @@ public class RMCoder {
         return generatorMatrix;
     }
 
-    public SparseMatrix encode(SparseMatrix toEncode) {
+    public SparseMatrix encode(SparseMatrix data) {
         if (generatorMatrix == null) {
             throw new IllegalStateException();
         }
-        if (toEncode == null) {
+        if (data == null) {
             throw new IllegalArgumentException();
         }
 
         SparseMatrix result = new SparseMatrix();
-        for (int i = 0; i < toEncode.getHeight(); i ++) {
-            if (toEncode.getRow(i).size() != generatorMatrix.getHeight()) {
+        for (int i = 0; i < data.getHeight(); i ++) {
+            if (data.getRow(i).size() != generatorMatrix.getHeight()) {
                 throw new IllegalArgumentException(i + " word length does not match generator matrix height");
             }
-            List<Integer> codeWord = new ArrayList<Integer>(LinearSpace.multiply(generatorMatrix.getRow(0), toEncode.getRow(i).get(0)));
+            List<Integer> codeWord = new ArrayList<Integer>(LinearSpace.multiply(generatorMatrix.getRow(0), data.getRow(i).get(0)));
             for (int j = 1; j < generatorMatrix.getHeight(); j ++) {
-                codeWord = LinearSpace.add(codeWord, LinearSpace.multiply(generatorMatrix.getRow(j), toEncode.getRow(i).get(j)));
+                codeWord = LinearSpace.add(codeWord, LinearSpace.multiply(generatorMatrix.getRow(j), data.getRow(i).get(j)));
             }
             result.addRow(codeWord);
         }
@@ -40,17 +44,18 @@ public class RMCoder {
         return result;
     }
 
-    public SparseMatrix decode(SparseMatrix toDecode) {
+    public SparseMatrix decode(SparseMatrix data) {
         if (generatorMatrix == null) {
             throw new IllegalStateException();
         }
-        if (toDecode == null) {
+        if (data == null) {
             throw new IllegalArgumentException();
         }
 
         SparseMatrix decoded = new SparseMatrix();
-        for (int i = 0; i < toDecode.getHeight(); i ++) {
+        for (int i = 0; i < data.getHeight(); i ++) {
             // for each received encoded word
+            List<Integer> yR = new ArrayList<Integer>(data.getRow(i));
             List<Integer> coefficient = new ArrayList<Integer>();
             List<Integer> My = new ArrayList<Integer>(Collections.nCopies(generatorMatrix.getWidth(), 0));
             for (int j = generatorMatrix.getHeight() - 1; j > 0; j --) {
@@ -58,14 +63,18 @@ public class RMCoder {
                 SparseMatrix characteristic = generatorMatrix.getCharacteristicVectors(j);
                 List<Integer> dotProductValues = new ArrayList<Integer>();
                 for (int k = 0; k < characteristic.getHeight(); k ++) {
-                    dotProductValues.add(LinearSpace.dotProduct(characteristic.getRow(k), toDecode.getRow(i)));
+                    dotProductValues.add(LinearSpace.dotProduct(characteristic.getRow(k), yR));
                 }
                 coefficient.add(Util.getMajorBit(dotProductValues));
                 // multiply each coefficient by its corresponding row and add the resulting vectors
                 My = LinearSpace.add(My, LinearSpace.multiply(generatorMatrix.getRow(j), coefficient.get(coefficient.size() - 1)));
+                // reduce inner degree
+                if (generatorMatrix.getCombination().getRow(j).size() != generatorMatrix.getCombination().getRow(j - 1).size()) {
+                    yR = LinearSpace.add(yR, My);
+                    My = new ArrayList<Integer>(Collections.nCopies(generatorMatrix.getWidth(), 0));
+                }
             }
-            // TODO: reformat step 3
-            coefficient.add(Util.getMajorBit(LinearSpace.add(My, toDecode.getRow(i))));
+            coefficient.add(Util.getMajorBit(LinearSpace.add(My, yR)));
             Collections.reverse(coefficient);
             decoded.addRow(coefficient);
         }
@@ -73,37 +82,67 @@ public class RMCoder {
         return decoded;
     }
 
+    public SparseMatrix encode(String text) {
+        SparseMatrix data = new SparseMatrix();
+        char[] binaryChars = new BigInteger(text.getBytes()).toString(2).toCharArray();
+        int codeWordLength = generatorMatrix.getHeight();
+        int exceedBit = codeWordLength - binaryChars.length % codeWordLength;
+
+        List<Integer> codeWord = new ArrayList<Integer>(codeWordLength);
+        for (int i = - exceedBit; i < binaryChars.length; i ++) {
+            codeWord.add(i < 0 ? 0 : (binaryChars[i] == '0' ? 0 : 1));
+            if (codeWord.size() == codeWordLength) {
+                data.addRow(codeWord);
+                codeWord.clear();
+            }
+        }
+
+        return encode(data);
+    }
+
+    public String decodeText(SparseMatrix data) {
+        SparseMatrix decoded = decode(data);
+
+        int codeWordLength = generatorMatrix.getHeight();
+        int exceedBit = 0;
+        int i = 0;
+        while (decoded.getRow(i / codeWordLength).get(i % codeWordLength) == 0) {
+            exceedBit ++;
+            i ++;
+        }
+        int decodedMessageLength = decoded.getHeight() * codeWordLength;
+        char[] binary = new char[decodedMessageLength - exceedBit];
+        for (i = exceedBit; i < decodedMessageLength; i ++) {
+            binary[i - exceedBit] = decoded.getRow(i / codeWordLength).get(i % codeWordLength) == 0 ? '0' : '1';
+        }
+
+        return new String(new BigInteger(new String(binary), 2).toByteArray());
+    }
+
     public static void main(String[] args) {
-        int m = 3;
-        int r = 1;
+        int m = 5;
+        int r = 4;
 
         RMCoder code = new RMCoder(r, m);
-        code.getGeneratorMatrix().print();
-        System.out.println();
-        code.getGeneratorMatrix().getCombination().print();
-        System.out.println();
+//        code.getGeneratorMatrix().print();
+//        System.out.println();
+//        code.getGeneratorMatrix().getCombination().print();
+//        System.out.println();
 //        code.getGeneratorMatrix().getCharacteristicVectors(3).print();
 //        System.out.println();
 
-        System.out.println("Max error count: " + ((int) Math.pow(2, m - r - 1) - 1));
-        SparseMatrix toencode = new SparseMatrix();
-        toencode.addRow(new ArrayList<Integer>(Arrays.asList(new Integer[]{0, 1, 1, 0, 1, 0, 1})));
-        toencode.print();
-        code.encode(toencode).print();
-        SparseMatrix encoded = new SparseMatrix();
-        encoded.addRow(new ArrayList<Integer>(Arrays.asList(new Integer[]{0, 1, 1, 1, 0, 1, 0, 0})));
-        encoded.print();
-        code.decode(encoded).print();
-
+//        System.out.println("Max error count: " + ((int) Math.pow(2, m - r - 1) - 1));
+//        SparseMatrix toencode = new SparseMatrix();
+//        toencode.addRow(new ArrayList<Integer>(Collections.nCopies(code.getGeneratorMatrix().getHeight(), 0)));
+//        toencode.print();
+        String toEncode = "I finally did IT! Mother fucker";
+        System.out.println("Text: " + toEncode);
+        SparseMatrix encoded = code.encode(toEncode);
+//        encoded.print();
+        System.out.println("Decoded: " + code.decodeText(encoded));
 //        List<List<Integer>> text = new ArrayList<List<Integer>>();
 //        text.add(new ArrayList<Integer>(Arrays.asList(new Integer[]{1,0,1,0,1,1,0})));
 //        System.out.println();
 //        print(code.encode(text));
-        List<Integer> a = new ArrayList<Integer>();
-        Integer d = 5;
-        a.add(d);
-        List<Integer> b = new ArrayList<Integer>(a);
-        a.set(0, 1);
-        System.out.println();
     }
 }
