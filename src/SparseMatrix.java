@@ -9,7 +9,7 @@ public class SparseMatrix {
         collection = new ArrayList<List<Integer>>();
     }
 
-    public int getHeight() {
+    public int getMessageLength() {
         return collection.size();
     }
 
@@ -43,16 +43,22 @@ public class SparseMatrix {
         }
     }
 
-    public void append(List<List<Integer>> matrix) {
-        for (List<Integer> row : matrix) {
-            addRow(row);
+    public void append(SparseMatrix matrix) {
+        for (int i = 0; i < matrix.getMessageLength(); i ++) {
+            addRow(matrix.getRow(i));
         }
     }
 
-    public void append(SparseMatrix matrix) {
-        for (int i = 0; i < matrix.getHeight(); i ++) {
-            addRow(matrix.getRow(i));
+    public boolean isSquare() {
+        if (collection.size() == 0) return true;
+
+        int length = collection.get(0).size();
+        for (int i = 1; i < collection.size(); i ++) {
+            if (collection.get(i).size() != length)
+                return false;
         }
+
+        return true;
     }
 
     public void print() {

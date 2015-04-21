@@ -1,13 +1,27 @@
 import java.util.*;
 
-public class LinearSpace {
+public class FiniteField {
 
-    private static final int q = 2;
+    public static int q = 2;
 
+    /**
+     * Returns sum of two values in finite field F_q
+     *
+     * @param a first value
+     * @param b second value
+     * @return sum of two values in finite field F_q
+     */
     public static int add(Integer a, Integer b) {
         return (a + b) % q;
     }
 
+    /**
+     * Returns sum of two vectors in finite field F_q
+     *
+     * @param a first vector
+     * @param b second vector
+     * @return sum of two vectors in finite field F_q
+     */
     public static List<Integer> add(List<Integer> a, List<Integer> b) {
         if (a.size() != b.size()) {
             throw new IllegalArgumentException();
@@ -20,10 +34,24 @@ public class LinearSpace {
         return result;
     }
 
+    /**
+     * Returns multiplication of two values in finite field F_q
+     *
+     * @param a first value
+     * @param b second value
+     * @return multiplication of two values in finite field F_q
+     */
     public static int multiply(Integer a, Integer b) {
         return (a * b) % q;
     }
 
+    /**
+     * Returns multiplication of two vectors in finite field F_q
+     *
+     * @param a first vector
+     * @param b second vector
+     * @return multiplication of two vectors in finite field F_q
+     */
     public static List<Integer> multiply(List<Integer> a, List<Integer> b) {
         if (a.size() != b.size()) {
             throw new IllegalArgumentException();
@@ -36,6 +64,13 @@ public class LinearSpace {
         return result;
     }
 
+    /**
+     * Returns multiplication of vector and scalar in finite field F_q
+     *
+     * @param a vector
+     * @param b scalar
+     * @return multiplication of vector and scalar in finite field F_q
+     */
     public static List<Integer> multiply(List<Integer> a, Integer b) {
         List<Integer> result = new ArrayList<Integer>(a.size());
         for (Integer bit : a) {
@@ -45,6 +80,13 @@ public class LinearSpace {
         return result;
     }
 
+    /**
+     * Returns scalar product of two vectors in finite field F_q
+     *
+     * @param a first vector
+     * @param b second vector
+     * @return scalar product of two vectors in finite field F_q
+     */
     public static int dotProduct(List<Integer> a, List<Integer> b) {
         if (a.size() != b.size()) {
             throw new IllegalArgumentException();
@@ -58,10 +100,16 @@ public class LinearSpace {
         return result;
     }
 
-    public static List<Integer> invert(List<Integer> a) {
+    /**
+     * Returns multiplicative inverse of binary vector in finite field F_2
+     *
+     * @param a binary vector
+     * @return multiplicative inverse of binary vector in finite field F_2
+     */
+    public static List<Integer> binaryInvert(List<Integer> a) {
         List<Integer> result = new ArrayList<Integer>();
         for (Integer bit : a) {
-            result.add((bit + 1) % q);
+            result.add((bit + 1) % 2);
         }
 
         return result;
