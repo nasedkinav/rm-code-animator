@@ -70,15 +70,16 @@ public class SparseMatrix {
         String result = "";
         for (int i = 0; i < getMessageLength(); i ++) {
             for (int j = 0; j < getRow(i).size(); j ++) {
-                int digit = getRow(i).get(j);
-                if (result.length() == 0 && digit == 0) {
-                    continue;
-                }
-                result += digit;
+                result += getRow(i).get(j);
             }
+            result += "\n";
         }
 
         return result;
+    }
+
+    public byte[] toByteArray() {
+        return null;
     }
 
     public void print() {

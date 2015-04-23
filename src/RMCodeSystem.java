@@ -1,4 +1,4 @@
-import java.nio.charset.Charset;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,104 +8,6 @@ public class RMCodeSystem {
 
     public RMCodeSystem(RMCode code) {
         this.code = code;
-    }
-
-    public SparseMatrix encodeText(String message) {
-        return code.encode(convertMessageToSparseMatrix(message));
-    }
-
-    public SparseMatrix decode(SparseMatrix data) {
-        return code.decode(data);
-    }
-
-    public SparseMatrix convertMessageToSparseMatrix(String message) {
-        SparseMatrix data = new SparseMatrix();
-
-        // get bit sequence from input text
-        boolean[] bitSequence = byteArrayToBitArray(message.getBytes());
-
-        int messageLength = bitSequence.length;
-        int messageWordLength = code.getGeneratorMatrix().getMessageLength();
-        // number of zero bit to be added in the beginning of message in order to match word size
-        int exceedBit = (messageWordLength - messageLength % messageWordLength) % messageWordLength;
-
-        // transfer bit stream into sparse matrix of fixed code word size
-        List<Integer> messageWord = new ArrayList<Integer>(messageWordLength);
-        for (int i = - exceedBit; i < messageLength; i ++) {
-            messageWord.add(i < 0 ? 0 : (bitSequence[i] ? 1 : 0));
-            if (messageWord.size() == messageWordLength) {
-                data.addRow(messageWord);
-                messageWord.clear();
-            }
-        }
-
-        return data;
-    }
-
-    public byte[] convertSparseMatrixToByteArray(SparseMatrix data, boolean toExpand) {
-        if (data == null || data.getMessageLength() == 0) {
-            throw new IllegalArgumentException();
-        }
-
-        boolean[] bits;
-        int messageSize = data.getMessageLength() * data.getRow(0).size();
-        int exceedBit;
-
-        if (! toExpand) {
-            // remove first exceeded bits
-            exceedBit = messageSize % 8;
-            bits = new boolean[messageSize - exceedBit];
-            int bitIndex = 0;
-            for (int i = 0; i < data.getMessageLength(); i++) {
-                for (int j = 0; j < data.getRow(i).size(); j++) {
-                    if (exceedBit-- > 0) {
-                        continue;
-                    }
-                    bits[bitIndex++] = data.getRow(i).get(j) != 0;
-                }
-            }
-        } else {
-            exceedBit = (8 - messageSize % 8) % 8;
-            bits = new boolean[messageSize + exceedBit];
-            int bitIndex = 0;
-            for (; bitIndex<exceedBit; bitIndex++){
-                bits[bitIndex] = false;
-            }
-            for (int i = 0; i < data.getMessageLength(); i++) {
-                for (int j = 0; j < data.getRow(i).size(); j++) {
-                    bits[bitIndex++] = data.getRow(i).get(j) != 0;
-                }
-            }
-        }
-
-        return bitArrayToByteArray(bits);
-    }
-
-    public boolean[] byteArrayToBitArray(byte[] bytes) {
-        boolean[] bits = new boolean[bytes.length * 8];
-        for (int i = 0; i < bytes.length * 8; i++) {
-            if ((bytes[i / 8] & (1 << (7 - (i % 8)))) > 0)
-                bits[i] = true;
-        }
-        return bits;
-    }
-
-    public byte[] bitArrayToByteArray(boolean[] bits) {
-        if (bits.length % 8 != 0) {
-            throw new IllegalArgumentException();
-        }
-
-        byte[] bytes = new byte[bits.length / 8];
-        String singleByte = "";
-        for (int i = 0; i < bits.length; i ++) {
-            singleByte += bits[i] ? "1" : "0";
-            if (i % 8 == 7) {
-                bytes[i / 8] = (byte) Integer.parseInt(singleByte, 2);
-                singleByte = "";
-            }
-        }
-
-        return bytes;
     }
 
     public static void main(String[] args) {
@@ -118,26 +20,139 @@ public class RMCodeSystem {
                 "\nBlock length: " + code.getGeneratorMatrix().getRow(0).size() + "\nRate: " + code.getRate() +
                 "\nDistance: " + code.getDistance() + "\nMax correcting errors: " + code.getMaxErrorCorrection());
         System.out.println();
+        byte[] bytes = "A".getBytes();
+        String text = "ABCDEFGHIJKLMNOPQRSTUVWXYZАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ1234567890";
+        System.out.println("Text:" + text);
+        SparseMatrix encoded = shell.encodeMessage(text, "utf-8");
+        System.out.println("Encoded:" + shell.getValidMessageFromSparseMatrix(encoded, "utf-8"));
+        System.out.println(encoded);
+        SparseMatrix decoded = shell.decodeMessage(encoded);
+        System.out.println(decoded);
+        System.out.println("Decoded:" + shell.getValidMessageAfterDecoding(decoded, "utf-8"));
+    }
 
-//        String text = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-//        System.out.println("Text:" + text);
-//        SparseMatrix encoded = shell.encodeText(text);
-//        System.out.println("Encoded:" + new String(shell.convertSparseMatrixToByteArray(encoded, true)));
-//        SparseMatrix decoded = shell.decode(encoded);
-//        System.out.println("Decoded:" + new String(shell.convertSparseMatrixToByteArray(decoded, false)));
-        byte[] first = new byte[1];
-        byte[] second = new byte[1];
+    public SparseMatrix encodeMessage(String message, String charset) {
+        return code.encode(prepareMessageToEncodeProcess(message, charset));
+    }
+
+    public SparseMatrix decodeMessage(SparseMatrix data) {
+        return code.decode(data);
+    }
+
+    /**
+     * Returns SparseMatrix of message blocks with specified beginning
+     * of the message (in order to fit size of input message to code block length
+     * by adding zeros in the beginning and one 1 bit)
+     *
+     * @param message message to encode
+     * @param charset encoding
+     * @return list of message blocks starting with exceed zeros and one 1
+     */
+    public SparseMatrix prepareMessageToEncodeProcess(String message, String charset) {
+        SparseMatrix data = new SparseMatrix();
+
+        // get bit sequence from input text
+        boolean[] bitSequence;
         try {
-            first = "╫".getBytes("utf-8");
-            second = "╫".getBytes();
-            String firstS = new String(first, "utf-8");
-            String secondS = new String(second);
-            System.out.println(firstS);
-            System.out.println(secondS);
-            System.out.println(new String(new byte[]{0}));
-        } catch (Exception e) {
+            bitSequence = Util.byteArrayToBitArray(message.getBytes(charset));
+        } catch (UnsupportedEncodingException uee) {
+            // TODO: find smth out with encodings
+            bitSequence = Util.byteArrayToBitArray(message.getBytes());
         }
-        System.out.println();
+
+        int messageLength = bitSequence.length; // plus one 1 bit meaning beginning of the message value
+        int messageWordLength = code.getGeneratorMatrix().getMessageLength();
+        // number of zero bit to be added in the beginning of message in order to match word size
+        int exceedBit = (messageWordLength - (messageLength + 1) % messageWordLength) % messageWordLength;
+        // message length + 1 because of exceed 1 at the beginning
+
+        // transfer bit stream into sparse matrix of fixed code word size
+        List<Integer> messageWord = new ArrayList<Integer>(messageWordLength);
+        // -exceedBit - 1 because of exceed 1 at the beginning
+        for (int i = -exceedBit - 1; i < messageLength; i++) {
+            // check for starting one 1
+            messageWord.add(i == -1 ? 1 : (i < 0 ? 0 : (bitSequence[i] ? 1 : 0)));
+            if (messageWord.size() == messageWordLength) {
+                data.addRow(messageWord);
+                messageWord.clear();
+            }
+        }
+        System.out.println("Prepared:" + data);
+        return data;
+    }
+
+    /**
+     * Returns valid decoded message formed by removing exceed zero bits
+     * in the beginning with one 1 (as beginning of the message)
+     *
+     * @param data    decoded message
+     * @param charset encoding
+     * @return String decoded text
+     */
+    public String getValidMessageAfterDecoding(SparseMatrix data, String charset) {
+        SparseMatrix message = new SparseMatrix();
+
+        boolean[] bits = new boolean[0];
+        int bitIndex = 0;
+        int redundantBit = 0;
+        int decodedLength = data.getMessageLength() * data.getRow(0).size();
+        boolean redundant = true;
+        for (int i = 0; i < data.getMessageLength(); i++) {
+            for (int j = 0; j < data.getRow(i).size(); j++) {
+                if (redundant) {
+                    if (data.getRow(i).get(j) == 0) {
+                        redundantBit++;
+                        continue;
+                    }
+                    redundant = false;
+                    bits = new boolean[decodedLength - redundantBit - 1];
+                    continue;
+                }
+                bits[bitIndex++] = data.getRow(i).get(j) != 0;
+            }
+        }
+
+        String result;
+        try {
+            result = new String(Util.bitArrayToByteArray(bits), charset);
+        } catch (UnsupportedEncodingException uee) {
+            result = new String(Util.bitArrayToByteArray(bits));
+        }
+
+        return result;
+    }
+
+    public String getValidMessageFromSparseMatrix(SparseMatrix data, String charset) {
+        if (data == null || data.getMessageLength() == 0) {
+            throw new IllegalArgumentException();
+        }
+
+        int messageSize = data.getMessageLength() * data.getRow(0).size();
+        // number of zero bits to be added at the beginning of the message
+        // in order to match the message length of the code
+        int exceedBit = (8 - messageSize % 8) % 8;
+        int bitIndex = 0;
+
+        boolean[] bits = new boolean[messageSize + exceedBit];
+        // pre fill the message with exceeding zero bits
+        for (; bitIndex < exceedBit; bitIndex++) {
+            bits[bitIndex] = false;
+        }
+        // fill the bit sequence with data matrix values
+        for (int i = 0; i < data.getMessageLength(); i++) {
+            for (int j = 0; j < data.getRow(i).size(); j++) {
+                bits[bitIndex++] = data.getRow(i).get(j) != 0;
+            }
+        }
+
+        String result;
+        try {
+            result = new String(Util.bitArrayToByteArray(bits), charset);
+        } catch (UnsupportedEncodingException uee) {
+            result = new String(Util.bitArrayToByteArray(bits));
+        }
+
+        return result;
     }
 
 }

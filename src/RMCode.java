@@ -53,7 +53,7 @@ public class RMCode {
             throw new IllegalStateException("Generator matrix has not been initialized");
         }
         if (data == null) {
-            throw new IllegalArgumentException("Data to encodeText is empty");
+            throw new IllegalArgumentException("Data to encode is empty");
         }
 
         SparseMatrix result = new SparseMatrix();
