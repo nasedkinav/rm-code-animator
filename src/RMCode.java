@@ -4,10 +4,24 @@ import java.util.List;
 
 public class RMCode {
 
+    /**
+     * Generator matrix of Reed-Muller code RM(r, m)
+     */
     private RMMatrix generatorMatrix;
 
+    /**
+     * Code rate (message length / block length)
+     */
     private double rate;
+
+    /**
+     * The minimal Hamming distance between code words
+     */
     private int distance;
+
+    /**
+     * Maximum number of errors that code can correct while decoding
+     */
     private int error;
 
     public RMCode(int r, int m) {
@@ -39,7 +53,7 @@ public class RMCode {
             throw new IllegalStateException("Generator matrix has not been initialized");
         }
         if (data == null) {
-            throw new IllegalArgumentException("Data to encode is empty");
+            throw new IllegalArgumentException("Data to encodeText is empty");
         }
 
         SparseMatrix result = new SparseMatrix();

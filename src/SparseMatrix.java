@@ -61,6 +61,26 @@ public class SparseMatrix {
         return true;
     }
 
+    /**
+     * Returns digit sequence string without redundant zero digits in the beginning
+     *
+     * @return digit sequence
+     */
+    public String toString() {
+        String result = "";
+        for (int i = 0; i < getMessageLength(); i ++) {
+            for (int j = 0; j < getRow(i).size(); j ++) {
+                int digit = getRow(i).get(j);
+                if (result.length() == 0 && digit == 0) {
+                    continue;
+                }
+                result += digit;
+            }
+        }
+
+        return result;
+    }
+
     public void print() {
         for (List<Integer> row : collection) {
             for (Integer bit : row) {

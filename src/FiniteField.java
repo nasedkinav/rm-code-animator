@@ -24,7 +24,7 @@ public class FiniteField {
      */
     public static List<Integer> add(List<Integer> a, List<Integer> b) {
         if (a.size() != b.size()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Both vectors must be same size");
         }
         List<Integer> result = new ArrayList<Integer>(a.size());
         for (int i = 0; i < a.size(); i ++) {
@@ -54,7 +54,7 @@ public class FiniteField {
      */
     public static List<Integer> multiply(List<Integer> a, List<Integer> b) {
         if (a.size() != b.size()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Both vectors must be same size");
         }
         List<Integer> result = new ArrayList<Integer>(a.size());
         for (int i = 0; i < a.size(); i ++) {
@@ -89,7 +89,7 @@ public class FiniteField {
      */
     public static int dotProduct(List<Integer> a, List<Integer> b) {
         if (a.size() != b.size()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Both vectors must be same size");
         }
 
         int result = 0;
@@ -109,6 +109,9 @@ public class FiniteField {
     public static List<Integer> binaryInvert(List<Integer> a) {
         List<Integer> result = new ArrayList<Integer>();
         for (Integer bit : a) {
+            if (bit != 0 && bit != 1) {
+                throw new IllegalArgumentException("Vector must consist of bits only");
+            }
             result.add((bit + 1) % 2);
         }
 
