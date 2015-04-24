@@ -61,9 +61,9 @@ public class RMCode {
             if (data.getRow(i).size() != generatorMatrix.getMessageLength()) {
                 throw new IllegalArgumentException("Word length does not match generator matrix height");
             }
-            List<Integer> codeWord = new ArrayList<Integer>(FiniteField.multiply(generatorMatrix.getRow(0), data.getRow(i).get(0)));
+            List<Boolean> codeWord = new ArrayList<Boolean>(BinaryFiniteField.multiply(generatorMatrix.getRow(0), data.getRow(i).get(0)));
             for (int j = 1; j < generatorMatrix.getMessageLength(); j ++) {
-                codeWord = FiniteField.add(codeWord, FiniteField.multiply(generatorMatrix.getRow(j), data.getRow(i).get(j)));
+                codeWord = BinaryFiniteField.add(codeWord, BinaryFiniteField.multiply(generatorMatrix.getRow(j), data.getRow(i).get(j)));
             }
             result.addRow(codeWord);
         }
@@ -82,26 +82,26 @@ public class RMCode {
         SparseMatrix decoded = new SparseMatrix();
         for (int i = 0; i < data.getMessageLength(); i ++) {
             // for each received encoded word
-            List<Integer> yR = new ArrayList<Integer>(data.getRow(i));
-            List<Integer> coefficient = new ArrayList<Integer>();
-            List<Integer> My = new ArrayList<Integer>(Collections.nCopies(generatorMatrix.getWidth(), 0));
+            List<Boolean> yR = new ArrayList<Boolean>(data.getRow(i));
+            List<Boolean> coefficient = new ArrayList<Boolean>();
+            List<Boolean> My = new ArrayList<Boolean>(Collections.nCopies(generatorMatrix.getWidth(), Boolean.FALSE));
             for (int j = generatorMatrix.getMessageLength() - 1; j > 0; j --) {
                 // for each non-first row of generator matrix
                 SparseMatrix characteristic = generatorMatrix.getCharacteristicVectors(j);
-                List<Integer> dotProductValues = new ArrayList<Integer>();
+                List<Boolean> dotProductValues = new ArrayList<Boolean>();
                 for (int k = 0; k < characteristic.getMessageLength(); k ++) {
-                    dotProductValues.add(FiniteField.dotProduct(characteristic.getRow(k), yR));
+                    dotProductValues.add(BinaryFiniteField.scalarProduct(characteristic.getRow(k), yR));
                 }
                 coefficient.add(Util.getMajorBit(dotProductValues));
                 // multiply each coefficient by its corresponding row and add the resulting vectors
-                My = FiniteField.add(My, FiniteField.multiply(generatorMatrix.getRow(j), coefficient.get(coefficient.size() - 1)));
+                My = BinaryFiniteField.add(My, BinaryFiniteField.multiply(generatorMatrix.getRow(j), coefficient.get(coefficient.size() - 1)));
                 // reduce inner degree
-                if (generatorMatrix.getCombination().getRow(j).size() != generatorMatrix.getCombination().getRow(j - 1).size()) {
-                    yR = FiniteField.add(yR, My);
-                    My = new ArrayList<Integer>(Collections.nCopies(generatorMatrix.getWidth(), 0));
+                if (generatorMatrix.getCombination().get(j).size() != generatorMatrix.getCombination().get(j - 1).size()) {
+                    yR = BinaryFiniteField.add(yR, My);
+                    My = new ArrayList<Boolean>(Collections.nCopies(generatorMatrix.getWidth(), Boolean.FALSE));
                 }
             }
-            coefficient.add(Util.getMajorBit(FiniteField.add(My, yR)));
+            coefficient.add(Util.getMajorBit(BinaryFiniteField.add(My, yR)));
             Collections.reverse(coefficient);
             decoded.addRow(coefficient);
         }

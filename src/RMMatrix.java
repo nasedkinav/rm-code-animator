@@ -2,51 +2,52 @@ import java.util.*;
 
 public class RMMatrix extends SparseMatrix {
 
-    SparseMatrix combination = new SparseMatrix();
+    List<List<Integer>> combination = new ArrayList<List<Integer>>();
 
     private int width;
     private int m;
-    private int r;
 
     public RMMatrix(int r, int m) {
         if (m < 2 || r >= m || r < 0) {
             throw new IllegalArgumentException();
         }
         this.m = m;
-        this.r = r;
         width = (int)Math.pow(2, m);
 
         // first row of n ones
-        addRow(Collections.nCopies(width, 1));
-        combination.addRow(Collections.nCopies(1, 0));
+        addRow(Collections.nCopies(width, true));
+        combination.add(Collections.nCopies(1, 0));
 
         // m rows which columns represent value sequences
         if (r == 0) {
             return;
         }
-        List<Integer> row = new ArrayList<Integer>(width);
+        List<Boolean> row = new ArrayList<Boolean>(width);
         for (int i = width / 2; i >= 1; i /= 2) {
             // (i = n / q; i >= 1; i /= q) or (i = 1; i < n; i *= q)
             for (int j = 0; j < width; j ++) {
-                row.add((j / i) % 2);
+                row.add(((j / i) % 2) != 0);
                 // (j / i + 1) % q or (j / i) % q
             }
             addRow(row);
             row.clear();
-            combination.addRow(Collections.nCopies(1, combination.getMessageLength()));
+            combination.add(Collections.nCopies(1, combination.size()));
         }
 
         // add multiplication matrix based on combination of rows (1, m)
         for (int i = 2; i <= r; i ++) {
-            SparseMatrix combinationMI = Util.combination(m, i);
-            for (int j = 0; j < combinationMI.getMessageLength(); j ++) {
-                List<Integer> multiplication = new ArrayList<Integer>(getRow(combinationMI.getRow(j).get(0)));
+            List<List<Integer>> combinationMI = Util.combination(m, i);
+            for (int j = 0; j < combinationMI.size(); j ++) {
+                List<Boolean> multiplication = new ArrayList<Boolean>(getRow(combinationMI.get(j).get(0)));
                 for (int k = 1; k < i; k ++) {
-                    multiplication = FiniteField.multiply(multiplication, getRow(combinationMI.getRow(j).get(k)));
+                    multiplication = BinaryFiniteField.multiply(multiplication, getRow(combinationMI.get(j).get(k)));
                 }
                 addRow(multiplication);
             }
-            combination.append(combinationMI);
+            for (int j = 0; j < combinationMI.size(); j ++) {
+                // append local combinationMI to combination
+                combination.add(new ArrayList<Integer>(combinationMI.get(j)));
+            }
         }
     }
 
@@ -54,7 +55,7 @@ public class RMMatrix extends SparseMatrix {
         return width;
     }
 
-    public SparseMatrix getCombination() {
+    public List<List<Integer>> getCombination() {
         return combination;
     }
 
@@ -65,7 +66,7 @@ public class RMMatrix extends SparseMatrix {
         SparseMatrix result = new SparseMatrix();
 
         // get monomial index which are not involved in a row combination
-        Set<Integer> combinationSet = new HashSet<Integer>(combination.getRow(index));
+        Set<Integer> combinationSet = new HashSet<Integer>(combination.get(index));
         List<Integer> monomialIndex = new ArrayList<Integer>();
         for (int i = 1; i <= m; i ++) {
             if (! combinationSet.contains(i)) {
@@ -75,11 +76,11 @@ public class RMMatrix extends SparseMatrix {
 
         // get combination of bool function inputs
         SparseMatrix monomialCombination = new SparseMatrix();
-        List<Integer> row = new ArrayList<Integer>(width);
+        List<Boolean> row = new ArrayList<Boolean>(width);
         final int variety = (int)Math.pow(2, monomialIndex.size());
         for (int i = variety / 2; i >= 1; i /= 2) {
             for (int j = 0; j < variety; j ++) {
-                row.add(j / i % 2);
+                row.add((j / i % 2) != 0);
             }
             monomialCombination.addRow(row);
             row.clear();
@@ -87,12 +88,12 @@ public class RMMatrix extends SparseMatrix {
 
         // produce combination of characteristic vectors
         for (int i = 0; i < variety; i ++) {
-            List<Integer> inputs = monomialCombination.getCol(i);
-            List<Integer> multiplication = new ArrayList<Integer>(
-                    inputs.get(0) == 0 ? getRow(monomialIndex.get(0)) : FiniteField.binaryInvert(getRow(monomialIndex.get(0))));
+            List<Boolean> inputs = monomialCombination.getColumn(i);
+            List<Boolean> multiplication = new ArrayList<Boolean>(
+                    !inputs.get(0) ? getRow(monomialIndex.get(0)) : BinaryFiniteField.invert(getRow(monomialIndex.get(0))));
             for (int j = 1; j < inputs.size(); j ++) {
-                multiplication = FiniteField.multiply(multiplication,
-                        inputs.get(j) == 0 ? getRow(monomialIndex.get(j)) : FiniteField.binaryInvert(getRow(monomialIndex.get(j))));
+                multiplication = BinaryFiniteField.multiply(multiplication,
+                        !inputs.get(j) ? getRow(monomialIndex.get(j)) : BinaryFiniteField.invert(getRow(monomialIndex.get(j))));
             }
             result.addRow(multiplication);
         }

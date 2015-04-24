@@ -67,11 +67,11 @@ public class RMCodeSystem {
         // message length + 1 because of exceed 1 at the beginning
 
         // transfer bit stream into sparse matrix of fixed code word size
-        List<Integer> messageWord = new ArrayList<Integer>(messageWordLength);
+        List<Boolean> messageWord = new ArrayList<Boolean>(messageWordLength);
         // -exceedBit - 1 because of exceed 1 at the beginning
         for (int i = -exceedBit - 1; i < messageLength; i++) {
             // check for starting one 1
-            messageWord.add(i == -1 ? 1 : (i < 0 ? 0 : (bitSequence[i] ? 1 : 0)));
+            messageWord.add(i == -1 ? Boolean.TRUE : (i < 0 ? Boolean.FALSE : bitSequence[i]));
             if (messageWord.size() == messageWordLength) {
                 data.addRow(messageWord);
                 messageWord.clear();
@@ -100,7 +100,7 @@ public class RMCodeSystem {
         for (int i = 0; i < data.getMessageLength(); i++) {
             for (int j = 0; j < data.getRow(i).size(); j++) {
                 if (redundant) {
-                    if (data.getRow(i).get(j) == 0) {
+                    if (!data.getRow(i).get(j)) {
                         redundantBit++;
                         continue;
                     }
@@ -108,7 +108,7 @@ public class RMCodeSystem {
                     bits = new boolean[decodedLength - redundantBit - 1];
                     continue;
                 }
-                bits[bitIndex++] = data.getRow(i).get(j) != 0;
+                bits[bitIndex++] = data.getRow(i).get(j);
             }
         }
 
@@ -141,7 +141,7 @@ public class RMCodeSystem {
         // fill the bit sequence with data matrix values
         for (int i = 0; i < data.getMessageLength(); i++) {
             for (int j = 0; j < data.getRow(i).size(); j++) {
-                bits[bitIndex++] = data.getRow(i).get(j) != 0;
+                bits[bitIndex++] = data.getRow(i).get(j);
             }
         }
 

@@ -3,62 +3,44 @@ import java.util.List;
 
 public class SparseMatrix {
 
-    protected List<List<Integer>> collection;
+    protected List<List<Boolean>> collection;
 
     public SparseMatrix() {
-        collection = new ArrayList<List<Integer>>();
+        collection = new ArrayList<List<Boolean>>();
     }
 
     public int getMessageLength() {
         return collection.size();
     }
 
-    public List<Integer> getRow(int index) {
+    public List<Boolean> getRow(int index) {
         return collection.get(index);
     }
 
-    public List<Integer> getCol(int index) {
-        List<Integer> column = new ArrayList<Integer>();
+    public List<Boolean> getColumn(int index) {
+        List<Boolean> column = new ArrayList<Boolean>();
 
-        for (List<Integer> row : collection) {
+        for (List<Boolean> row : collection) {
             column.add(row.get(index));
         }
 
         return column;
     }
 
-    public void addRow(List<Integer> row) {
-        collection.add(new ArrayList<Integer>(row));
+    public void addRow(List<Boolean> row) {
+        collection.add(new ArrayList<Boolean>(row));
     }
 
-    public void addCol(List<Integer> col) {
-        List<Integer> column = new ArrayList<Integer>(col);
+    public void addColumn(List<Boolean> column) {
+        List<Boolean> result = new ArrayList<Boolean>(column);
 
-        if (column.size() != collection.size()) {
+        if (result.size() != collection.size()) {
             throw new IllegalArgumentException("Column height does not match matrix height");
         }
 
         for (int i = 0; i < collection.size(); i ++) {
-            collection.get(i).add((column.get(i)));
+            collection.get(i).add((result.get(i)));
         }
-    }
-
-    public void append(SparseMatrix matrix) {
-        for (int i = 0; i < matrix.getMessageLength(); i ++) {
-            addRow(matrix.getRow(i));
-        }
-    }
-
-    public boolean isSquare() {
-        if (collection.size() == 0) return true;
-
-        int length = collection.get(0).size();
-        for (int i = 1; i < collection.size(); i ++) {
-            if (collection.get(i).size() != length)
-                return false;
-        }
-
-        return true;
     }
 
     /**
@@ -70,7 +52,7 @@ public class SparseMatrix {
         String result = "";
         for (int i = 0; i < getMessageLength(); i ++) {
             for (int j = 0; j < getRow(i).size(); j ++) {
-                result += getRow(i).get(j);
+                result += getRow(i).get(j) ? "1" : "0";
             }
             result += "\n";
         }
@@ -78,16 +60,4 @@ public class SparseMatrix {
         return result;
     }
 
-    public byte[] toByteArray() {
-        return null;
-    }
-
-    public void print() {
-        for (List<Integer> row : collection) {
-            for (Integer bit : row) {
-                System.out.print(bit + " ");
-            }
-            System.out.println();
-        }
-    }
 }
