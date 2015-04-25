@@ -1,22 +1,47 @@
+package model;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class SparseMatrix {
+public class BitMatrix {
 
+    /**
+     * Collection of bits represented as bit matrix
+     */
     protected List<List<Boolean>> collection;
 
-    public SparseMatrix() {
+    /**
+     * Constructs an object of model.BitMatrix
+     */
+    public BitMatrix() {
         collection = new ArrayList<List<Boolean>>();
     }
 
-    public int getMessageLength() {
+    /**
+     * Returns number of matrix rows
+     *
+     * @return number of rows
+     */
+    public int getRowNumber() {
         return collection.size();
     }
 
+    /**
+     * Returns matrix row by index
+     *
+     * @param index index of the row
+     * @return certain row of the matrix
+     */
     public List<Boolean> getRow(int index) {
         return collection.get(index);
     }
 
+    /**
+     * Returns matrix column by index
+     *
+     * @param index index of the column
+     * @return certain column of the matrix
+     */
     public List<Boolean> getColumn(int index) {
         List<Boolean> column = new ArrayList<Boolean>();
 
@@ -27,10 +52,20 @@ public class SparseMatrix {
         return column;
     }
 
+    /**
+     * Adds a copy of argument row in the end of the matrix
+     *
+     * @param row row to be added
+     */
     public void addRow(List<Boolean> row) {
         collection.add(new ArrayList<Boolean>(row));
     }
 
+    /**
+     * Adds a copy of argument row as a last column of the matrix
+     *
+     * @param column row to be added as a column
+     */
     public void addColumn(List<Boolean> column) {
         List<Boolean> result = new ArrayList<Boolean>(column);
 
@@ -50,7 +85,7 @@ public class SparseMatrix {
      */
     public String toString() {
         String result = "";
-        for (int i = 0; i < getMessageLength(); i ++) {
+        for (int i = 0; i < getRowNumber(); i++) {
             for (int j = 0; j < getRow(i).size(); j ++) {
                 result += getRow(i).get(j) ? "1" : "0";
             }

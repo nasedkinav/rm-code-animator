@@ -1,3 +1,7 @@
+package model;
+
+import util.Util;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,7 +30,7 @@ public class RMCode {
 
     public RMCode(int r, int m) {
         generatorMatrix = new RMMatrix(r, m);
-        rate = generatorMatrix.getMessageLength() / Math.pow(2, m);
+        rate = generatorMatrix.getRowNumber() / Math.pow(2, m);
         distance = (int)Math.pow(2, m - r);
         error = (int)Math.pow(2, m - r - 1) - 1;
         if (error < 0) error = 0;
@@ -48,7 +52,7 @@ public class RMCode {
         return error;
     }
 
-    public SparseMatrix encode(SparseMatrix data) {
+    public BitMatrix encode(BitMatrix data) {
         if (generatorMatrix == null) {
             throw new IllegalStateException("Generator matrix has not been initialized");
         }
@@ -56,13 +60,13 @@ public class RMCode {
             throw new IllegalArgumentException("Data to encode is empty");
         }
 
-        SparseMatrix result = new SparseMatrix();
-        for (int i = 0; i < data.getMessageLength(); i ++) {
-            if (data.getRow(i).size() != generatorMatrix.getMessageLength()) {
+        BitMatrix result = new BitMatrix();
+        for (int i = 0; i < data.getRowNumber(); i++) {
+            if (data.getRow(i).size() != generatorMatrix.getRowNumber()) {
                 throw new IllegalArgumentException("Word length does not match generator matrix height");
             }
             List<Boolean> codeWord = new ArrayList<Boolean>(BinaryFiniteField.multiply(generatorMatrix.getRow(0), data.getRow(i).get(0)));
-            for (int j = 1; j < generatorMatrix.getMessageLength(); j ++) {
+            for (int j = 1; j < generatorMatrix.getRowNumber(); j++) {
                 codeWord = BinaryFiniteField.add(codeWord, BinaryFiniteField.multiply(generatorMatrix.getRow(j), data.getRow(i).get(j)));
             }
             result.addRow(codeWord);
@@ -71,7 +75,7 @@ public class RMCode {
         return result;
     }
 
-    public SparseMatrix decode(SparseMatrix data) {
+    public BitMatrix decode(BitMatrix data) {
         if (generatorMatrix == null) {
             throw new IllegalStateException("Generator matrix has not been initialized");
         }
@@ -79,17 +83,17 @@ public class RMCode {
             throw new IllegalArgumentException("Data to decode is empty");
         }
 
-        SparseMatrix decoded = new SparseMatrix();
-        for (int i = 0; i < data.getMessageLength(); i ++) {
+        BitMatrix decoded = new BitMatrix();
+        for (int i = 0; i < data.getRowNumber(); i++) {
             // for each received encoded word
             List<Boolean> yR = new ArrayList<Boolean>(data.getRow(i));
             List<Boolean> coefficient = new ArrayList<Boolean>();
             List<Boolean> My = new ArrayList<Boolean>(Collections.nCopies(generatorMatrix.getWidth(), Boolean.FALSE));
-            for (int j = generatorMatrix.getMessageLength() - 1; j > 0; j --) {
+            for (int j = generatorMatrix.getRowNumber() - 1; j > 0; j--) {
                 // for each non-first row of generator matrix
-                SparseMatrix characteristic = generatorMatrix.getCharacteristicVectors(j);
+                BitMatrix characteristic = generatorMatrix.getCharacteristicVectors(j);
                 List<Boolean> dotProductValues = new ArrayList<Boolean>();
-                for (int k = 0; k < characteristic.getMessageLength(); k ++) {
+                for (int k = 0; k < characteristic.getRowNumber(); k++) {
                     dotProductValues.add(BinaryFiniteField.scalarProduct(characteristic.getRow(k), yR));
                 }
                 coefficient.add(Util.getMajorBit(dotProductValues));

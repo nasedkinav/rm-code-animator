@@ -1,4 +1,7 @@
-import java.util.*;
+package model;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BinaryFiniteField {
 
@@ -101,6 +104,16 @@ public class BinaryFiniteField {
     }
 
     /**
+     * Returns inverse value of a single bit
+     *
+     * @param a bit to be inverted
+     * @return inverse value of a bit
+     */
+    public static Boolean invert(Boolean a) {
+        return a ^ Boolean.TRUE;
+    }
+
+    /**
      * Returns multiplicative inverse of binary vector in finite field F_2
      *
      * @param a binary vector
@@ -109,7 +122,7 @@ public class BinaryFiniteField {
     public static List<Boolean> invert(List<Boolean> a) {
         List<Boolean> result = new ArrayList<Boolean>();
         for (boolean bit : a) {
-            result.add(bit ^ Boolean.TRUE);
+            result.add(invert(bit));
         }
 
         return result;
