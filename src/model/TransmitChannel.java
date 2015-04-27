@@ -7,7 +7,7 @@ import java.util.Set;
 
 public class TransmitChannel {
 
-    public static void stream(BitMatrix data, int error) {
+    public static void transmitMessage(BitMatrix data, int error) {
         Random generator = new Random();
 
         for (int i = 0; i < data.getRowNumber(); i++) {

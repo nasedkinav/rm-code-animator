@@ -32,7 +32,7 @@ public class RMCodeSystem {
         System.out.println("Text:" + text);
         BitMatrix encoded = shell.encodeMessage(text, Charset.defaultCharset().name());
         System.out.println("Encoded:\n" + encoded);
-        TransmitChannel.stream(encoded, code.getMaxErrorCorrection());
+        TransmitChannel.transmitMessage(encoded, code.getMaxErrorCorrection());
         System.out.println("Transmitted:\n" + encoded);
 //        System.out.println("Encoded:" + shell.getValidMessageFromBitMatrix(encoded, Charset.defaultCharset().name()));
 //        System.out.println(encoded);
