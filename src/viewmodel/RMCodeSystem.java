@@ -41,12 +41,20 @@ public class RMCodeSystem {
         System.out.println("Decoded:" + shell.getValidMessageAfterDecoding(decoded, Charset.defaultCharset().name()));
     }
 
+    public RMCode getCode() {
+        return code;
+    }
+
     public BitMatrix encodeMessage(String message, String charset) {
         return code.encode(prepareMessageToEncodeProcess(message, charset));
     }
 
     public BitMatrix decodeMessage(BitMatrix data) {
         return code.decode(data);
+    }
+
+    public BitMatrix encode(BitMatrix prepared) {
+        return code.encode(prepared);
     }
 
     /**
@@ -86,7 +94,7 @@ public class RMCodeSystem {
                 messageWord.clear();
             }
         }
-        System.out.println("Prepared:\n" + data);
+
         return data;
     }
 

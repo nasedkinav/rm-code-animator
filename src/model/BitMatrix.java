@@ -18,6 +18,18 @@ public class BitMatrix {
     }
 
     /**
+     * Constructs a deep copy of a BitMatrix object
+     *
+     * @param data matrix to be copied
+     */
+    public BitMatrix(BitMatrix data) {
+        collection = new ArrayList<List<Boolean>>();
+        for (int i = 0; i < data.getRowNumber(); i++) {
+            collection.add(new ArrayList<Boolean>(data.getRow(i)));
+        }
+    }
+
+    /**
      * Returns number of matrix rows
      *
      * @return number of rows

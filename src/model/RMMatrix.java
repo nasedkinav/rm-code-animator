@@ -12,8 +12,14 @@ public class RMMatrix extends BitMatrix {
     private int m;
 
     public RMMatrix(int r, int m) {
-        if (m < 2 || r >= m || r < 0) {
-            throw new IllegalArgumentException();
+        if (m < 2) {
+            throw new IllegalArgumentException("M parameter should be greater than 1");
+        }
+        if (r >= m) {
+            throw new IllegalArgumentException("Code order should be under length determinator");
+        }
+        if (r < 0) {
+            throw new IllegalArgumentException("Code order should be non-negative");
         }
         this.m = m;
         width = (int)Math.pow(2, m);
