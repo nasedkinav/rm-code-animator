@@ -6,6 +6,7 @@
 
 package view;
 
+import model.BinaryFiniteField;
 import model.BitMatrix;
 import model.RMCode;
 import model.TransmitChannel;
@@ -19,24 +20,33 @@ import javax.swing.text.DefaultHighlighter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RMView extends javax.swing.JFrame {
 
-    private final Object lock = new Object();
-    private final double maxSleepTime = 10000;
+    private final double maxSleepTime = 3000;
+    // TODO: enlarge rowText width
+    // TODO: dot products! incorrect
+    // TODO: limit r and m
     // TODO: smth with encodings
     private final String charset = "windows-1251";
+
     private RMCodeSystem codeSystem;
+
     private int m = 3;
     private int r = 1;
+
     private BitMatrix converted;
     private BitMatrix encoded;
     private BitMatrix transmitted;
     private BitMatrix decoded;
+
     private double sleepTime = maxSleepTime / 2;
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private volatile boolean paused = false;
+
+    // Variables declaration - do not modify
     private javax.swing.JLabel RMLabel;
-    private javax.swing.JCheckBox animationCheckBox;
     private javax.swing.JLabel blockLabel;
     private javax.swing.JTextField blockText;
     private javax.swing.JButton convertButton;
@@ -49,6 +59,9 @@ public class RMView extends javax.swing.JFrame {
     private javax.swing.JLabel decodedStringLabel;
     private javax.swing.JTextField decodedStringText;
     private javax.swing.JTextArea decodedText;
+    private javax.swing.JLabel decodingProcessLabel;
+    private javax.swing.JScrollPane decodingProcessScroll;
+    private javax.swing.JTextArea decodingProcessText;
     private javax.swing.JLabel distanceLabel;
     private javax.swing.JTextField distanceText;
     private javax.swing.JButton encodeButton;
@@ -60,7 +73,6 @@ public class RMView extends javax.swing.JFrame {
     private javax.swing.JLabel generatorLabel;
     private javax.swing.JScrollPane generatorScroll;
     private javax.swing.JTextArea generatorText;
-    private javax.swing.JCheckBox highlightCheckBox;
     private javax.swing.JTextField inputMessage;
     private javax.swing.JLabel inputMessageLabel;
     private javax.swing.JLabel lengthLabel;
@@ -70,7 +82,6 @@ public class RMView extends javax.swing.JFrame {
     private javax.swing.JPanel messagePanel;
     private javax.swing.JLabel orderLabel;
     private javax.swing.JTextField orderText;
-    private javax.swing.JLabel parametersLabel;
     private javax.swing.JLabel rateLabel;
     private javax.swing.JTextField rateText;
     private javax.swing.JScrollPane rowScroll;
@@ -84,6 +95,8 @@ public class RMView extends javax.swing.JFrame {
     private javax.swing.JLabel transmittedStringLabel;
     private javax.swing.JTextField transmittedStringText;
     private javax.swing.JTextArea transmittedText;
+    // End of variables declaration
+
 
     /**
      * Creates new form RMView
@@ -149,6 +162,14 @@ public class RMView extends javax.swing.JFrame {
         rowText.setText("");
         transmittedStringText.setText("");
         decodedStringText.setText("");
+        decodingProcessText.setText("");
+
+        // remove highlights
+        encodedText.getHighlighter().removeAllHighlights();
+        transmittedText.getHighlighter().removeAllHighlights();
+        decodedText.getHighlighter().removeAllHighlights();
+        rowText.getHighlighter().removeAllHighlights();
+        generatorText.getHighlighter().removeAllHighlights();
 
         // flush matrices
         converted = encoded = transmitted = decoded = null;
@@ -165,13 +186,15 @@ public class RMView extends javax.swing.JFrame {
     }
 
     private void sleepThread() {
-//        synchronized (lock) {
-        try {
-            Thread.currentThread().sleep((int) sleepTime);
-        } catch (InterruptedException ie) {
-            // do nothing
+        for (int i = 0; i < 10; i++) {
+            while (paused) {
+            }
+            try {
+                Thread.currentThread().sleep((int) sleepTime / 10);
+            } catch (InterruptedException ie) {
+                // do nothing
+            }
         }
-//        }
     }
 
     private void addHighlight(JTextArea area, int p0, int p1, Color c) {
@@ -207,17 +230,17 @@ public class RMView extends javax.swing.JFrame {
                 converted = codeSystem.prepareMessageToEncodeProcess(inputMessage.getText(), charset);
                 convertedMessageText.setText(converted.toString());
                 // highlight message start
+                convertedMessageText.getHighlighter().removeAllHighlights();
                 addHighlight(convertedMessageText, 0, convertedMessageText.getText().indexOf('1') + 1, Color.yellow);
+                convertedMessageText.setCaretPosition(0);
                 encodeButton.setEnabled(true);
             }
         });
         slider.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                synchronized (lock) {
-                    // TODO: set min to 10k and max to 50ms
-                    sleepTime = maxSleepTime * (1 - (double) slider.getValue() / (slider.getMaximum() - slider.getMinimum()));
-                }
+                sleepTime = maxSleepTime * (1 - (double) slider.getValue() / (slider.getMaximum() - slider.getMinimum()));
+                paused = sleepTime == maxSleepTime;
             }
         });
         encodeButton.addActionListener(new ActionListener() {
@@ -260,8 +283,8 @@ public class RMView extends javax.swing.JFrame {
                                 }
                             }
                             // append encoded row
-                            encodedText.append(encodedRows[i] + (i == convertedRows.length - 1 ? "" : "\n"));
                             encodedText.getHighlighter().removeAllHighlights();
+                            encodedText.append(encodedRows[i] + (i == convertedRows.length - 1 ? "" : "\n"));
                             addHighlight(encodedText, i * (encodedRows[i].length() + 1),
                                     i * (encodedRows[i].length() + 1) + encodedRows[i].length(), Color.green);
                             // set caret
@@ -295,6 +318,11 @@ public class RMView extends javax.swing.JFrame {
                 }
                 disableControls();
                 transmittedText.setText("");
+                transmittedText.getHighlighter().removeAllHighlights();
+                decoded = null;
+                decodedText.setText("");
+                decodedStringText.setText("");
+                decodingProcessText.setText("");
 
                 new Thread(new Runnable() {
                     @Override
@@ -349,10 +377,82 @@ public class RMView extends javax.swing.JFrame {
                 }
                 disableControls();
                 decodedText.setText("");
+                decodingProcessText.setText("");
 
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        decoded = codeSystem.decodeMessage(transmitted);
+                        String[] transmittedRows = transmitted.toString().split("\n");
+                        String[] decodedRows = decoded.toString().split("\n");
 
+                        String[][] characteristicVectors = new String[codeSystem.getCode().getGeneratorMatrix().getRowNumber()][codeSystem.getCode().getGeneratorMatrix().getWidth()];
+                        for (int i = 1; i < codeSystem.getCode().getGeneratorMatrix().getRowNumber(); i++) {
+                            characteristicVectors[i] = codeSystem.getCode().getGeneratorMatrix().getCharacteristicVectors(i).toString().split("\n");
+                        }
+
+                        for (int i = 0; i < transmittedRows.length; i++) {
+                            for (int j = decodedRows[i].length() - 1; j >= 0; j--) {
+                                // TODO: underline in transmitted
+                                // add decoded message
+                                String decoded = "";
+                                for (int k = 0; k < decodedRows[i].length(); k++) {
+                                    if (k <= j) decoded += "-";
+                                    else decoded += decodedRows[i].charAt(k);
+                                }
+                                // add dot products
+                                decodingProcessText.setText(formDecodingProcessMessage(transmittedRows[i], decoded, j + 1, characteristicVectors[j]));
+                                sleepThread();
+                            }
+                            decodedText.getHighlighter().removeAllHighlights();
+                            decodedText.append(decodedRows[i]);
+                            if (i != transmittedRows.length - 1) decodedText.append("\n");
+                            addHighlight(decodedText, i * (decodedRows[i].length() + 1), i * (decodedRows[i].length() + 1) + decodedRows[i].length(), Color.green);
+                            decodedText.setCaretPosition(decodedText.getText().length() - 1);
+                        }
+                        transmittedText.setCaretPosition(0);
+                        decodedText.getHighlighter().removeAllHighlights();
+                        decodedText.setCaretPosition(0);
+                        decodingProcessText.setText("");
+                        decodedStringText.setText(codeSystem.getValidMessageAfterDecoding(decoded, charset));
+                        // enable controls
+                        convertButton.setEnabled(true);
+                        encodeButton.setEnabled(true);
+                        transmitButton.setEnabled(true);
+                        decodeButton.setEnabled(true);
+                        lengthText.setEnabled(true);
+                        orderText.setEnabled(true);
+                    }
+                }).start();
             }
         });
+    }
+
+    private String formDecodingProcessMessage(String transmittedRow, String decodedMessage, int bitNumber, String[] characteristicVectors) {
+        String result = "Decoding code block:\n" + transmittedRow;
+        if (decodedMessage != null) {
+            result += "\nDecoded message:\n" + decodedMessage;
+        }
+        if (bitNumber > -1) {
+            result += "\nDecoding bit number: " + bitNumber;
+        }
+        if (characteristicVectors != null) {
+            if (characteristicVectors[0] != null) {
+                result += "\nDot products:";
+                for (String vector : characteristicVectors) {
+                    List<Boolean> transmitted = new ArrayList<Boolean>();
+                    List<Boolean> characteristic = new ArrayList<Boolean>();
+                    for (int j = 0; j < transmittedRow.length(); j++) {
+                        transmitted.add(transmittedRow.charAt(j) != '0');
+                        characteristic.add(vector.charAt(j) != '0');
+                    }
+                    result += "\n(" + vector + ").(" + transmittedRow + ") = " +
+                            (BinaryFiniteField.scalarProduct(transmitted, characteristic) ? "1" : "0");
+                }
+            }
+        }
+
+        return result;
     }
 
     private void initCode() {
@@ -388,7 +488,7 @@ public class RMView extends javax.swing.JFrame {
      * regenerated by the Form Editor.
      */
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">
     private void initComponents() {
 
         messagePanel = new javax.swing.JPanel();
@@ -437,9 +537,9 @@ public class RMView extends javax.swing.JFrame {
         generatorText = new javax.swing.JTextArea();
         slider = new javax.swing.JSlider();
         sliderLabel = new javax.swing.JLabel();
-        parametersLabel = new javax.swing.JLabel();
-        highlightCheckBox = new javax.swing.JCheckBox();
-        animationCheckBox = new javax.swing.JCheckBox();
+        decodingProcessLabel = new javax.swing.JLabel();
+        decodingProcessScroll = new javax.swing.JScrollPane();
+        decodingProcessText = new javax.swing.JTextArea();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Reed-Muller code animator");
@@ -639,12 +739,13 @@ public class RMView extends javax.swing.JFrame {
         sliderLabel.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
         sliderLabel.setText("Animation velocity:");
 
-        parametersLabel.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        parametersLabel.setText("Parameters:");
+        decodingProcessLabel.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        decodingProcessLabel.setText("Decoding process:");
 
-        highlightCheckBox.setText("Highlight animation");
-
-        animationCheckBox.setText("Perform animation");
+        decodingProcessText.setEditable(false);
+        decodingProcessText.setColumns(20);
+        decodingProcessText.setRows(5);
+        decodingProcessScroll.setViewportView(decodingProcessText);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -652,16 +753,12 @@ public class RMView extends javax.swing.JFrame {
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGroup(layout.createSequentialGroup()
                                 .addContainerGap()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                         .addComponent(messagePanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addGroup(layout.createSequentialGroup()
                                                 .addGap(10, 10, 10)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                                        .addGroup(layout.createSequentialGroup()
-                                                                .addComponent(RMLabel)
-                                                                .addGap(33, 33, 33)
-                                                                .addComponent(generatorLabel))
-                                                        .addGroup(layout.createSequentialGroup()
+                                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                                                         .addComponent(lengthLabel)
                                                                         .addComponent(orderLabel)
@@ -685,15 +782,23 @@ public class RMView extends javax.swing.JFrame {
                                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                                                 .addComponent(signLabel)
                                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                                                .addComponent(generatorScroll, javax.swing.GroupLayout.PREFERRED_SIZE, 284, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                                .addGap(18, 18, 18)
+                                                                .addComponent(generatorScroll, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                        .addGroup(layout.createSequentialGroup()
+                                                                .addComponent(RMLabel)
+                                                                .addGap(33, 33, 33)
+                                                                .addComponent(generatorLabel)))
+                                                .addGap(18, 18, 18)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addComponent(decodingProcessScroll)
+                                                        .addGroup(layout.createSequentialGroup()
                                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                                                        .addComponent(slider, javax.swing.GroupLayout.PREFERRED_SIZE, 168, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                                        .addComponent(sliderLabel)
-                                                                        .addComponent(parametersLabel)
-                                                                        .addComponent(highlightCheckBox)
-                                                                        .addComponent(animationCheckBox))))))
-                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                                                        .addComponent(decodingProcessLabel)
+                                                                        .addGroup(layout.createSequentialGroup()
+                                                                                .addComponent(sliderLabel)
+                                                                                .addGap(18, 18, 18)
+                                                                                .addComponent(slider, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                                                .addGap(0, 0, Short.MAX_VALUE)))))
+                                .addContainerGap(16, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -701,15 +806,9 @@ public class RMView extends javax.swing.JFrame {
                                 .addContainerGap()
                                 .addComponent(messagePanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(15, 15, 15)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                        .addComponent(RMLabel)
-                                        .addComponent(generatorLabel))
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addGroup(layout.createSequentialGroup()
-                                                .addGap(89, 89, 89)
-                                                .addComponent(signLabel))
-                                        .addGroup(layout.createSequentialGroup()
-                                                .addGap(18, 18, 18)
+                                                .addGap(29, 29, 29)
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                                         .addGroup(layout.createSequentialGroup()
                                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -740,21 +839,27 @@ public class RMView extends javax.swing.JFrame {
                                                                         .addComponent(errorLabel)
                                                                         .addComponent(errorText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                                                         .addComponent(rowScroll)
-                                                        .addComponent(generatorScroll)
+                                                        .addComponent(generatorScroll)))
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                                .addComponent(generatorLabel)
+                                                                .addComponent(sliderLabel))
+                                                        .addComponent(RMLabel))
+                                                .addGap(15, 15, 15)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                                         .addGroup(layout.createSequentialGroup()
-                                                                .addComponent(sliderLabel)
+                                                                .addComponent(decodingProcessLabel)
                                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                                .addComponent(slider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                                .addGap(18, 18, 18)
-                                                                .addComponent(parametersLabel)
-                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                                                .addComponent(animationCheckBox)
-                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                                .addComponent(highlightCheckBox)))))
-                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                                                .addComponent(decodingProcessScroll))
+                                                        .addGroup(layout.createSequentialGroup()
+                                                                .addGap(90, 90, 90)
+                                                                .addComponent(signLabel))))
+                                        .addComponent(slider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addContainerGap(101, Short.MAX_VALUE))
         );
 
         pack();
-    }// </editor-fold>//GEN-END:initComponents
+    }// </editor-fold>
     // End of variables declaration//GEN-END:variables
 }
