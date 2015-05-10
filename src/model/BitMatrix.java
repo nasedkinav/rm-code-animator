@@ -14,7 +14,7 @@ public class BitMatrix {
      * Constructs an object of model.BitMatrix
      */
     public BitMatrix() {
-        collection = new ArrayList<List<Boolean>>();
+        collection = new ArrayList<>();
     }
 
     /**
@@ -23,9 +23,9 @@ public class BitMatrix {
      * @param data matrix to be copied
      */
     public BitMatrix(BitMatrix data) {
-        collection = new ArrayList<List<Boolean>>();
+        collection = new ArrayList<>();
         for (int i = 0; i < data.getRowNumber(); i++) {
-            collection.add(new ArrayList<Boolean>(data.getRow(i)));
+            collection.add(new ArrayList<>(data.getRow(i)));
         }
     }
 
@@ -55,7 +55,7 @@ public class BitMatrix {
      * @return certain column of the matrix
      */
     public List<Boolean> getColumn(int index) {
-        List<Boolean> column = new ArrayList<Boolean>();
+        List<Boolean> column = new ArrayList<>();
 
         for (List<Boolean> row : collection) {
             column.add(row.get(index));
@@ -70,7 +70,7 @@ public class BitMatrix {
      * @param row row to be added
      */
     public void addRow(List<Boolean> row) {
-        collection.add(new ArrayList<Boolean>(row));
+        collection.add(new ArrayList<>(row));
     }
 
     /**
@@ -79,7 +79,7 @@ public class BitMatrix {
      * @param column row to be added as a column
      */
     public void addColumn(List<Boolean> column) {
-        List<Boolean> result = new ArrayList<Boolean>(column);
+        List<Boolean> result = new ArrayList<>(column);
 
         if (result.size() != collection.size()) {
             throw new IllegalArgumentException("Column height does not match matrix height");

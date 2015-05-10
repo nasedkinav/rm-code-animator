@@ -5,6 +5,13 @@ import java.util.List;
 
 public class Util {
 
+    /**
+     * Proceed all combinations without repeating of C(n, k)
+     *
+     * @param n maximum integer in a sequence
+     * @param k number of integers to be retreived from sequence in a subsequence
+     * @return list of combinations
+     */
     public static List<List<Integer>> combination(int n, int k) {
         if (k > n) {
             throw new IllegalArgumentException();
@@ -13,19 +20,19 @@ public class Util {
             throw new IllegalArgumentException();
         }
 
-        List<List<Integer>> result = new ArrayList<List<Integer>>();
-        List<Integer> combination = new ArrayList<Integer>(k);
+        List<List<Integer>> result = new ArrayList<>();
+        List<Integer> combination = new ArrayList<>(k);
         for (int i = 1; i <= k; i ++) {
             combination.add(i);
         }
         if (k == n) {
-            result.add(new ArrayList<Integer>(combination));
+            result.add(new ArrayList<>(combination));
             return result;
         }
 
         int p = k;
         while (p >= 1) {
-            result.add(new ArrayList<Integer>(combination));
+            result.add(new ArrayList<>(combination));
             if (combination.get(k - 1) == n) {
                 p --;
             } else {
@@ -41,6 +48,12 @@ public class Util {
         return result;
     }
 
+    /**
+     * Returns a bit with major occurrences in a bit sequence
+     *
+     * @param a bit sequence
+     * @return major occurred bit
+     */
     public static boolean getMajorBit(List<Boolean> a) {
         int isZeroMajor = 0;
 
@@ -59,6 +72,11 @@ public class Util {
         return isZeroMajor < 0;
     }
 
+    /**
+     * Converts array of bytes into array of bits
+     * @param bytes byte array
+     * @return bit array
+     */
     public static boolean[] byteArrayToBitArray(byte[] bytes) {
         boolean[] bits = new boolean[bytes.length * 8];
         for (int i = 0; i < bytes.length * 8; i++) {
@@ -68,6 +86,11 @@ public class Util {
         return bits;
     }
 
+    /**
+     * Converts bit array into byte array
+     * @param bits bit array
+     * @return byte array
+     */
     public static byte[] bitArrayToByteArray(boolean[] bits) {
         if (bits.length % 8 != 0) {
             throw new IllegalArgumentException();

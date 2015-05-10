@@ -28,7 +28,7 @@ public class BinaryFiniteField {
             throw new IllegalArgumentException("Both vectors must be same size");
         }
 
-        List<Boolean> result = new ArrayList<Boolean>(a.size());
+        List<Boolean> result = new ArrayList<>(a.size());
         for (int i = 0; i < a.size(); i ++) {
             result.add(add(a.get(i), b.get(i)));
         }
@@ -59,7 +59,7 @@ public class BinaryFiniteField {
             throw new IllegalArgumentException("Both vectors must be same size");
         }
 
-        List<Boolean> result = new ArrayList<Boolean>(a.size());
+        List<Boolean> result = new ArrayList<>(a.size());
         for (int i = 0; i < a.size(); i ++) {
             result.add(multiply(a.get(i), b.get(i)));
         }
@@ -75,7 +75,7 @@ public class BinaryFiniteField {
      * @return multiplication of vector and scalar in finite field F_2
      */
     public static List<Boolean> multiply(List<Boolean> a, boolean b) {
-        List<Boolean> result = new ArrayList<Boolean>(a.size());
+        List<Boolean> result = new ArrayList<>(a.size());
         for (boolean bit : a) {
             result.add(multiply(bit, b));
         }
@@ -120,7 +120,7 @@ public class BinaryFiniteField {
      * @return multiplicative inverse of binary vector in finite field F_2
      */
     public static List<Boolean> invert(List<Boolean> a) {
-        List<Boolean> result = new ArrayList<Boolean>();
+        List<Boolean> result = new ArrayList<>();
         for (boolean bit : a) {
             result.add(invert(bit));
         }

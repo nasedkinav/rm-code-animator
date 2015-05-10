@@ -2,54 +2,39 @@ package viewmodel;
 
 import model.BitMatrix;
 import model.RMCode;
-import model.TransmitChannel;
 import util.Util;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RMCodeSystem {
 
+    /**
+     * RMCode instance
+     */
     private RMCode code;
 
+    /**
+     * Constructs RMCode boundary
+     *
+     * @param code RMCode object
+     */
     public RMCodeSystem(RMCode code) {
         this.code = code;
     }
 
-    public static void main(String[] args) {
-        int m = 3;
-        int r = 1;
-
-        RMCode code = new RMCode(r, m);
-        RMCodeSystem shell = new RMCodeSystem(code);
-        System.out.println("RM(" + r + ", " + m + ")\nMessage length: " + code.getGeneratorMatrix().getRowNumber() +
-                "\nBlock length: " + code.getGeneratorMatrix().getRow(0).size() + "\nRate: " + code.getRate() +
-                "\nDistance: " + code.getDistance() + "\nMax correcting errors: " + code.getMaxErrorCorrection());
-        System.out.println();
-        String text = "AА1";
-        System.out.println("Text:" + text);
-        BitMatrix encoded = shell.encodeMessage(text, Charset.defaultCharset().name());
-        System.out.println("Encoded:\n" + encoded);
-        TransmitChannel.transmitMessage(encoded, code.getMaxErrorCorrection());
-        System.out.println("Transmitted:\n" + encoded);
-//        System.out.println("Encoded:" + shell.getValidMessageFromBitMatrix(encoded, Charset.defaultCharset().name()));
-//        System.out.println(encoded);
-        BitMatrix decoded = shell.decodeMessage(encoded);
-        System.out.println(decoded);
-        System.out.println("Decoded:" + shell.getValidMessageAfterDecoding(decoded, Charset.defaultCharset().name()));
-    }
-
+    /**
+     * Returns RMCode instance
+     *
+     * @return
+     */
     public RMCode getCode() {
         return code;
     }
 
-    public BitMatrix encodeMessage(String message, String charset) {
-        return code.encode(prepareMessageToEncodeProcess(message, charset));
-    }
 
-    public BitMatrix decodeMessage(BitMatrix data) {
+    public BitMatrix decode(BitMatrix data) {
         return code.decode(data);
     }
 
@@ -84,7 +69,7 @@ public class RMCodeSystem {
         // message length + 1 because of exceed 1 at the beginning
 
         // transfer bit stream into sparse matrix of fixed code word size
-        List<Boolean> messageWord = new ArrayList<Boolean>(messageWordLength);
+        List<Boolean> messageWord = new ArrayList<>(messageWordLength);
         // -exceedBit - 1 because of exceed 1 at the beginning
         for (int i = -exceedBit - 1; i < messageLength; i++) {
             // check for starting one 1
@@ -137,6 +122,14 @@ public class RMCodeSystem {
         return result;
     }
 
+    /**
+     * Returns valid message formed by adding exceed zero bits
+     * in the beginning of first message in order to fit byte amount
+     *
+     * @param data matrix of bit vectors
+     * @param charset message encoding
+     * @return converted message
+     */
     public String getValidMessageFromBitMatrix(BitMatrix data, String charset) {
         if (data == null || data.getRowNumber() == 0) {
             throw new IllegalArgumentException();
