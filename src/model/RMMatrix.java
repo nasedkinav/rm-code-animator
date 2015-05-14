@@ -31,7 +31,7 @@ public class RMMatrix extends BitMatrix {
         if (m < 2) {
             throw new IllegalArgumentException("M parameter should be greater than 1");
         }
-        if (r >= m) {
+        if (r > m) {
             throw new IllegalArgumentException("Code order should be under length determinator");
         }
         if (r < 0) {
@@ -130,11 +130,17 @@ public class RMMatrix extends BitMatrix {
         // produce combination of characteristic vectors
         for (int i = 0; i < variety; i ++) {
             List<Boolean> inputs = monomialCombination.getColumn(i);
-            List<Boolean> multiplication = new ArrayList<>(
-                    !inputs.get(0) ? getRow(monomialIndex.get(0)) : BinaryFiniteField.invert(getRow(monomialIndex.get(0))));
-            for (int j = 1; j < inputs.size(); j ++) {
-                multiplication = BinaryFiniteField.multiply(multiplication,
-                        !inputs.get(j) ? getRow(monomialIndex.get(j)) : BinaryFiniteField.invert(getRow(monomialIndex.get(j))));
+            List<Boolean> multiplication;
+            if (inputs.size() == 0) {
+                // last row of RM(m,m) code
+                multiplication = Collections.nCopies(width, Boolean.TRUE);
+            } else {
+                multiplication = new ArrayList<>(
+                        !inputs.get(0) ? getRow(monomialIndex.get(0)) : BinaryFiniteField.invert(getRow(monomialIndex.get(0))));
+                for (int j = 1; j < inputs.size(); j++) {
+                    multiplication = BinaryFiniteField.multiply(multiplication,
+                            !inputs.get(j) ? getRow(monomialIndex.get(j)) : BinaryFiniteField.invert(getRow(monomialIndex.get(j))));
+                }
             }
             result.addRow(multiplication);
         }
